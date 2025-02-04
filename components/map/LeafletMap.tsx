@@ -122,9 +122,9 @@
 // v2 test
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import type { Map as LMap, FeatureGroup, LatLngExpression } from "leaflet";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   Dialog,
   DialogContent,
@@ -137,9 +137,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Id } from "@/convex/_generated/dataModel";
 
-// Dynamically import Leaflet with no SSR
+// Import map component dynamically to avoid SSR issues
 const LeafletMapComponent = dynamic(() => import("./LeafletMapComponent"), {
   ssr: false,
 });
@@ -166,21 +165,27 @@ interface LeafletMapProps {
 }
 
 export default function LeafletMap(props: LeafletMapProps) {
-  const [showDialog, setShowDialog] = useState(false);
-  const [newZoneData, setNewZoneData] = useState({
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newZone, setNewZone] = useState({
     coordinates: [] as number[][],
     name: "",
     description: "",
   });
 
-  const handleCreateZone = () => {
-    props.onZoneCreate(
-      newZoneData.coordinates,
-      newZoneData.name,
-      newZoneData.description,
-    );
-    setShowDialog(false);
-    setNewZoneData({ coordinates: [], name: "", description: "" });
+  const handleCreateZone = async () => {
+    if (!newZone.name) return;
+
+    try {
+      await props.onZoneCreate(
+        newZone.coordinates,
+        newZone.name,
+        newZone.description,
+      );
+      setDialogOpen(false);
+      setNewZone({ coordinates: [], name: "", description: "" });
+    } catch (error) {
+      console.error("Failed to create zone:", error);
+    }
   };
 
   return (
@@ -188,52 +193,70 @@ export default function LeafletMap(props: LeafletMapProps) {
       <CardContent className="p-0">
         <LeafletMapComponent
           {...props}
-          onShowDialog={() => setShowDialog(true)}
-          onSetNewZoneData={setNewZoneData}
+          onCreateDrawing={(coordinates) => {
+            setNewZone((prev) => ({ ...prev, coordinates }));
+            setDialogOpen(true);
+          }}
         />
       </CardContent>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNewZone({ coordinates: [], name: "", description: "" });
+          }
+          setDialogOpen(open);
+        }}
+      >
+        <DialogContent className="z-[9999] fixed shadow-lg sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="text-xl">Create New Zone</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Zone Name
-              </Label>
+              <Label htmlFor="name">Zone Name</Label>
               <Input
                 id="name"
-                placeholder="Enter zone name"
-                value={newZoneData.name}
+                value={newZone.name}
                 onChange={(e) =>
-                  setNewZoneData({ ...newZoneData, name: e.target.value })
+                  setNewZone((prev) => ({ ...prev, name: e.target.value }))
                 }
+                placeholder="Enter zone name"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
-                Description
-              </Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Enter zone description"
-                value={newZoneData.description}
+                value={newZone.description}
                 onChange={(e) =>
-                  setNewZoneData({
-                    ...newZoneData,
+                  setNewZone((prev) => ({
+                    ...prev,
                     description: e.target.value,
-                  })
+                  }))
                 }
+                placeholder="Enter zone description"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDialogOpen(false);
+                setNewZone({ coordinates: [], name: "", description: "" });
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateZone} disabled={!newZoneData.name}>
+            <Button
+              onClick={handleCreateZone}
+              disabled={!newZone.name || newZone.coordinates.length < 3}
+            >
               Create Zone
             </Button>
           </DialogFooter>

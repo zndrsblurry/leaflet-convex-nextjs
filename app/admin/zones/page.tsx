@@ -226,6 +226,88 @@
 //     </div>
 //   );
 // }
+//v2-working
+// "use client";
+
+// import { Card } from "@/components/ui/card";
+// import LeafletMap from "@/components/map/LeafletMap";
+// import ZoneList from "@/components/map/ZoneList";
+// import { useZones } from "@/hooks/useZones";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+// import { Loader2 } from "lucide-react";
+// import { useState } from "react";
+// import type { Id } from "@/convex/_generated/dataModel";
+
+// interface Zone {
+//   _id: Id<"zones">;
+//   name: string;
+//   coordinates: number[][];
+//   area: number;
+//   isActive: boolean;
+//   description?: string;
+//   createdAt: number;
+//   updatedAt: number;
+//   _creationTime: number;
+// }
+
+// export default function ZonesPage() {
+//   const {
+//     zones,
+//     isLoading,
+//     error,
+//     createZone,
+//     updateZone,
+//     deleteZone,
+//     toggleZoneActive,
+//   } = useZones();
+//   const [focusedZoneId, setFocusedZoneId] = useState<Id<"zones"> | null>(null);
+
+//   if (isLoading) {
+//     return (
+//       <div className="flex items-center justify-center min-h-[400px]">
+//         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+//       </div>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <Alert variant="destructive" className="max-w-2xl mx-auto mt-8">
+//         <AlertDescription>{error}</AlertDescription>
+//       </Alert>
+//     );
+//   }
+
+//   const handleZoneDelete = async (id: Id<"zones">) => {
+//     await deleteZone(id);
+//     if (focusedZoneId === id) {
+//       setFocusedZoneId(null);
+//     }
+//   };
+
+//   return (
+//     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+//       <div className="lg:col-span-2">
+//         <LeafletMap
+//           zones={zones || []}
+//           focusedZoneId={focusedZoneId}
+//           onZoneCreate={createZone}
+//           onZoneUpdate={updateZone}
+//           onZoneDelete={handleZoneDelete}
+//         />
+//       </div>
+//       <div>
+//         <ZoneList
+//           zones={zones || []}
+//           focusedZoneId={focusedZoneId}
+//           onZoneSelect={setFocusedZoneId}
+//           onToggleActive={toggleZoneActive}
+//         />
+//       </div>
+//     </div>
+//   );
+// }
+//v3-test
 "use client";
 
 import { Card } from "@/components/ui/card";
@@ -234,7 +316,7 @@ import ZoneList from "@/components/map/ZoneList";
 import { useZones } from "@/hooks/useZones";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface Zone {

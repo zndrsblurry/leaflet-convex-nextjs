@@ -6,6 +6,10 @@ interface GoogleMapsContextType {
   autocompleteService: google.maps.places.AutocompleteService | null;
 }
 
+// Declare the API key constant at the top
+const GOOGLE_MAPS_API_KEY = process.env
+  .NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string;
+
 const GoogleMapsContext = createContext<GoogleMapsContextType>({
   isLoaded: false,
   placesService: null,
@@ -14,15 +18,12 @@ const GoogleMapsContext = createContext<GoogleMapsContextType>({
 
 export const useGoogleMaps = () => useContext(GoogleMapsContext);
 
+// Remove apiKey from props since we'll use the environment variable
 interface GoogleMapsProviderProps {
-  apiKey: string;
   children: React.ReactNode;
 }
 
-export function GoogleMapsProvider({
-  apiKey,
-  children,
-}: GoogleMapsProviderProps) {
+export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [placesService, setPlacesService] =
     useState<google.maps.places.PlacesService | null>(null);
@@ -42,11 +43,11 @@ export function GoogleMapsProvider({
 
     const script = document.createElement("script");
     script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    // Use the constant instead of the prop
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = initializeServices;
-
     document.head.appendChild(script);
 
     function initializeServices() {
@@ -55,7 +56,7 @@ export function GoogleMapsProvider({
       setAutocompleteService(new google.maps.places.AutocompleteService());
       setIsLoaded(true);
     }
-  }, [apiKey]);
+  }, []); // Remove apiKey from dependencies since we're using the constant
 
   return (
     <GoogleMapsContext.Provider
